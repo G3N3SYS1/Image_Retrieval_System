@@ -6,8 +6,8 @@ from tkinter import filedialog
 import threading
 import sys
 import os
-from models.matcher import CarBottomMatcher
-from models.visualization import ImageViewer
+from miscellaneous.matcher import CarBottomMatcher
+from miscellaneous.visualization import ImageViewer
 
 MODEL_PATH = "C:\\Users\\MaxwellLee\\PycharmProjects\\CarPlateRecognition\\segment_748_epoch_100.pt"
 OUTPUT_DIR = 'output'
@@ -27,6 +27,12 @@ class RegisterPage:
         self.current_text_y = 240
         self.current_img_x = 160
         self.current_text_x = 191
+        self.current_trash_x = 508
+        self.current_trash_y = 241
+        self.initial_img_y = 242
+        self.initial_text_y = 240
+        self.initial_trash_y = 241
+
         # Add flag to track first button press
         self.first_add = True
 
@@ -65,6 +71,7 @@ class RegisterPage:
         self.folder_icon_img = PhotoImage(file=r"assets/main_page/folder_icon.png")
         self.file_icon_img = PhotoImage(file=r"assets/main_page/file_icon.png")
         self.ok_button_img = PhotoImage(file=r"assets/main_page/ok_button.png")
+        self.trash_button_img = PhotoImage(file=r"assets/main_page/trash.png")
 
         # Set background
         self.canvas.create_image(0, 0, image=self.bg, anchor="nw")
@@ -187,29 +194,84 @@ class RegisterPage:
         if file_path not in self.path_list:
             self.path_list.append(file_path)
 
-            # Create icon based on path type
-            if os.path.isfile(file_path):
-                icon_id = self.canvas.create_image(self.current_img_x, self.current_img_y,
-                                                   image=self.file_icon_img)
-            else:
-                icon_id = self.canvas.create_image(self.current_img_x, self.current_img_y,
-                                                   image=self.folder_icon_img)
-
-            # Create text label for the path name
+            # First create text label so we can reference it in the bind
             text_id = self.canvas.create_text(self.current_text_x, self.current_text_y,
                                               text=name,
                                               fill="#000000",
                                               font=("Baskervville SC", 8),
                                               anchor="w")  # west/left alignment
 
+            # Create icon based on path type
+            if os.path.isfile(file_path):
+                icon_id = self.canvas.create_image(self.current_img_x, self.current_img_y,
+                                                   image=self.file_icon_img)
+                garbage_id = self.canvas.create_image(self.current_trash_x, self.current_trash_y,
+                                                      image=self.trash_button_img)
+            else:
+                icon_id = self.canvas.create_image(self.current_img_x, self.current_img_y,
+                                                   image=self.folder_icon_img)
+                garbage_id = self.canvas.create_image(self.current_trash_x, self.current_trash_y,
+                                                      image=self.trash_button_img)
+
+            # Add click binding to the trash icon
+            self.canvas.tag_bind(garbage_id, '<Button-1>',
+                                 lambda event, items=(icon_id, text_id, garbage_id),
+                                        path=file_path: self.delete_item(items, path))
+
             # Update y positions for next item
             self.current_img_y += 41
             self.current_text_y += 40
+            self.current_trash_y += 40
 
             # Store the IDs if you need to modify/delete them later
             if not hasattr(self, 'path_items'):
                 self.path_items = []
-            self.path_items.append((icon_id, text_id))
+            self.path_items.append((icon_id, text_id, garbage_id))
+
+    def delete_item(self, items, path):
+        """
+        Delete the selected items from canvas and remove path from list
+        Args:
+            items: Tuple of (icon_id, text_id, garbage_id) to be deleted
+            path: File path to remove from path_list
+        """
+        # Delete canvas items
+        icon_id, text_id, garbage_id = items
+        self.canvas.delete(icon_id)
+        self.canvas.delete(text_id)
+        self.canvas.delete(garbage_id)
+
+        # Remove from path_list
+        if path in self.path_list:
+            self.path_list.remove(path)
+
+        # Remove from path_items
+        if hasattr(self, 'path_items'):
+            self.path_items.remove(items)
+
+        # Optional: Rearrange remaining items
+        self.rearrange_items()
+
+    def rearrange_items(self):
+        """
+        Rearrange remaining items to remove gaps
+        """
+        if hasattr(self, 'path_items'):
+            # Reset current positions
+            self.current_img_y = self.initial_img_y  # You'll need to store this initial value
+            self.current_text_y = self.initial_text_y
+            self.current_trash_y = self.initial_trash_y
+
+            for icon_id, text_id, garbage_id in self.path_items:
+                # Move items to new positions
+                self.canvas.coords(icon_id, self.current_img_x, self.current_img_y)
+                self.canvas.coords(text_id, self.current_text_x, self.current_text_y)
+                self.canvas.coords(garbage_id, self.current_trash_x, self.current_trash_y)
+
+                # Update positions for next item
+                self.current_img_y += 41
+                self.current_text_y += 40
+                self.current_trash_y += 40
 
     def process_single_file(self, file_path):
         """Process a single image file"""
