@@ -1,12 +1,12 @@
-# Under Vehicle Image Retrieval System (UVIRS)
+# Image Retrieval System 
 ## Intro
-UVIRS  is an Under Vehicle Image Retrieval repository, where users can utilize it to view and compare multiple under vehicle images from the same or even different car plates.
+This  is an Image Retrieval repository, where users can utilize it to view and compare multiple vehicle images from the same or even different vehicles.
 
 This repository uses app.py (main) which contains 3 different pages (classes):
 ```
-1. Register Page: For adding in new under vehicle images from existing or new car plates.
+1. Register Page: For adding in new vehicle images from existing or new vehicles.
 2. Loading Page: Loads the image files and add them into the Output folder as well as writing into the feature_cache.json file.
-3. Main Page: Allows the user to view, select, find, delete and compare under vehicle images.
+3. Main Page: Allows the user to view, select, find, delete and compare vehicle images.
 ```
 
 *Note: Before proceeding, a virtual environment should be created.* 
@@ -88,16 +88,16 @@ pip install -r requirements.txt
 
 *This page also comprises of the following:*
 ```
-1. Checkboxes: Allows user to select images of the desired car plate.
-2. License Plate Number: Shows user a list of license plate that had been added. The user may also click on these plate number to view the images.
+1. Checkboxes: Allows user to select images of the desired vehicle.
+2. Vehicle Model: Shows user a list of vehicles that had been added. The user may also click on these vehicle models to view the images.
 3. Number of features: These are the number of classes that were detected by the trained .pt model in real-time during the processing of images.
 4. Storage date: Contains information on when the images were added as well as the exact timings.
-5. Search button: Allows user to search for specific car plate within the entries. The user may also press 'Enter' key to select the highlighted car plate number.
+5. Search button: Allows user to search for specific vehicle within the entries. The user may also press 'Enter' key to select the highlighted vehicle.
 ```
 ```
-6. Select all / Deselect all button: Allows user to select/ deselect all car plate images inside the entry.
+6. Select all / Deselect all button: Allows user to select/ deselect all vehicle images inside the entry.
 7. Add button: redirects user to the register page to add more images.
-8. Delete button: Deletes all selected car plates and their respective images from the entry and output folder.
+8. Delete button: Deletes all selected vehicles and their respective images from the entry and output folder.
 9. Compare button: Allows user to compare the desired vehicle against the images stored inside the output folder.
 10. Refresh button: Lets the user refresh the entry to get the most updated view.
 ```
@@ -112,12 +112,12 @@ pip install -r requirements.txt
 ```
 
 ## D. Miscellaneous
-*List of other files used in this repository (found under the miscellaneous directory):*
+*List of other files used in this repository (found inside the miscellaneous directory):*
 
 ### Feature_cache.json
 *This is the file used to store all the images and data using the format as follows:*
 ```
-{Carplate:{
+{Vehicle:{
     image_path_under_output_folder:{
         features:[
             {"class_id":id,
@@ -139,34 +139,34 @@ This method is used for handling the addition of single image file as mentioned 
 #### 2. Batch processing of images
 This method is used for handling the addition of directories containing single or multiple image file(s).
 ```
-# default format in this code is "id-PLATE_NUMBER_*.jpg", change the code below in matcher.py if you need to change the type of format
+# default format in this code is "id-Vehicle_Model_*.jpg", change the code below in matcher.py if you need to change the type of format
 
 for img_file in image_files:
-    # Extract plate number from filename (adjust parsing logic as needed)
-    plate_number = img_file.split('_')[0]
-    plate_number = plate_number.split('-')[1]
-    if plate_number not in plate_groups:
-        plate_groups[plate_number] = []
-    plate_groups[plate_number].append(img_file)
+    # Extract vehicle model from filename (adjust parsing logic as needed)
+    vehicle_model = img_file.split('_')[0]
+    vehicle_model = vehicle_model.split('-')[1]
+    if vehicle_model not in vehicle_groups:
+        vehicle_groups[vehicle_model] = []
+    vehicle_groups[vehicle_model].append(img_file)
 ```
 #### 3. Recognize unknown car
-This function will run a similarity calculation that compares the given undervehicle image and compares it with existing images that were previously registered and written inside feature_cache.json file.
+This function will run a similarity calculation that compares the query image and compares it with existing images that were previously registered and written inside feature_cache.json file.
 The result of the calculations will pull up the top 5 most similar results as compared to the query image. The results will then be saved and can be found inside "output\\comparison".
 
 #### 4. View stored vehicles
-This function will show the list of all registered undervehicle images found inside "output\\images". The list is sorted in alphabetical manner with respect to their car plate.
+This function will show the list of all registered images found inside "output\\images". The list is sorted in alphabetical manner with respect to their vehicle.
 
 #### 5. View one stored vehicle
-Similar to the aforementioned, this function shows only a single registered undervehicle image of choice instead of the complete list. It utilizes file explorer to open "output\\images\\{car plate inserted}"  
+Similar to the aforementioned, this function shows only a single registered image of choice instead of the complete list. It utilizes file explorer to open "output\\images\\{vehicle inserted}"  
 
 #### 6. Modify stored vehicle
-This function will list out all the registered car plates as written inside the feature_cache.json file. The user can then choose which specific car plate they would like to modify and replace the existing car plate accordingly. The user may also change the filepath if they wishes to do so.
+This function will list out all the registered vehicles as written inside the feature_cache.json file. The user can then choose which specific vehicle they would like to modify and replace the existing vehicle accordingly. The user may also change the filepath if they wishes to do so.
 
 #### 7. Delete stored vehicle
-This function aims to delete only one selected undervehicle image.
+This function aims to delete only one selected vehicle image.
 
 #### 8. Delete vehicles in batches
-Similar to the aforementioned, this function lets user delete undervehicle images in batches.
+Similar to the aforementioned, this function lets user delete vehicle images in batches.
 
 ### Visualization.py
 *This file contains the VisulizationHandler class, which is responsible for creating the layout of images and plot them accordingly. It is then passed onto ImageViewer class, which creates a tkinter window for the user to view the images.*

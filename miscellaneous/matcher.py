@@ -19,7 +19,7 @@ import traceback
 
 
 class CarBottomMatcher:
-    def __init__(self, model_path='segment_748_epoch_100.pt', save_dir='output'):
+    def __init__(self, model_path='best.pt', save_dir='output'):
         if not os.path.exists(model_path):
             raise ValueError(f"Model file not exists: {model_path}")
         self.model = YOLO(model_path)
@@ -213,7 +213,7 @@ class CarBottomMatcher:
         plate_number = plate_number.split(".")[0]
         result = {
             'success': False,
-            'plate_number': plate_number,
+            'car_model': plate_number,
             'message': '',
             'save_path': None
         }

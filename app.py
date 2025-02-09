@@ -9,7 +9,7 @@ import os
 from miscellaneous.matcher import CarBottomMatcher
 from miscellaneous.visualization import ImageViewer
 
-MODEL_PATH = "C:\\Users\\MaxwellLee\\PycharmProjects\\CarPlateRecognition\\segment_748_epoch_100.pt"
+MODEL_PATH = "C:\\Users\\MaxwellLee\\PycharmProjects\\Max_UVIRS\\best.pt"
 OUTPUT_DIR = 'output'
 matcher = CarBottomMatcher(MODEL_PATH, OUTPUT_DIR)
 
@@ -577,7 +577,7 @@ class VehicleListView:
         header_frame.pack(fill='x', padx=15, pady=10)
 
         header_text = ttk.Label(header_frame,
-                                text=f"{'Select':<10}{'License plate number':<25}{'Number of features':<22}{'           Storage date':<35}",
+                                text=f"{'Select':<20}{'Car model':<30}{'Number of features':<30}{'Storage date':<20}",
                                 font=('TkDefaultFont', 10, 'bold'))
         header_text.pack(side='left', anchor='w')
 

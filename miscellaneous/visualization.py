@@ -53,8 +53,8 @@ class VisualizationHandler:
             match_img = cv2.imread(match_img_path) if match_img_path and os.path.exists(match_img_path) else None
             plt.subplot(gs[(idx + 1) // 3, (idx + 1) % 3])  # Adjust subplot indexing
             plt.imshow(match_img)
-            # plt.title(f'Car Plate: {plate_number}\nSimilarity: {similarity:.2%}')
-            plt.title(f'\nCar Plate: {plate_number} --> {similarity:.2%}')
+            # plt.title(f'Car Model: {plate_number}\nSimilarity: {similarity:.2%}')
+            plt.title(f'\nCar Model: {plate_number} --> {similarity:.2%}')
             plt.axis('off')
 
         plt.tight_layout()
