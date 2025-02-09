@@ -48,13 +48,13 @@ class VisualizationHandler:
         plt.axis('off')
 
         # Process the matches and plot them in two columns
-        for idx, (plate_number, similarity) in enumerate(matches):
-            match_img_path = find_vehicle_image_func(plate_number)
+        for idx, (vehicle_model, similarity) in enumerate(matches):
+            match_img_path = find_vehicle_image_func(vehicle_model)
             match_img = cv2.imread(match_img_path) if match_img_path and os.path.exists(match_img_path) else None
             plt.subplot(gs[(idx + 1) // 3, (idx + 1) % 3])  # Adjust subplot indexing
             plt.imshow(match_img)
-            # plt.title(f'Car Model: {plate_number}\nSimilarity: {similarity:.2%}')
-            plt.title(f'\nCar Model: {plate_number} --> {similarity:.2%}')
+            # plt.title(f'Vehicle Model: {vehicle_model}\nSimilarity: {similarity:.2%}')
+            plt.title(f'\nVehicle Model: {vehicle_model} --> {similarity:.2%}')
             plt.axis('off')
 
         plt.tight_layout()
@@ -71,11 +71,11 @@ class VisualizationHandler:
     @staticmethod
     def save_similarity_data(matches: List[Tuple[str, float]], feature_cache: dict, comparison_folder: str) -> str:
         all_similarities = []
-        for plate_number, stored_features in feature_cache.items():
-            similarity = next((score for p, score in matches if p == plate_number), 0.0)
+        for vehicle_model, stored_features in feature_cache.items():
+            similarity = next((score for p, score in matches if p == vehicle_model), 0.0)
             if similarity > 0:
                 all_similarities.append({
-                    'License_plate_number': plate_number,
+                    'Vehicle_model': vehicle_model,
                     'Similarity': f'{similarity:.2%}'
                 })
 
@@ -84,7 +84,7 @@ class VisualizationHandler:
             df = pd.DataFrame(all_similarities)
             df = df.sort_values('Similarity', ascending=False)
         else:
-            df = pd.DataFrame(columns=['License_plate_number', 'Similarity'])
+            df = pd.DataFrame(columns=['Vehicle_model', 'Similarity'])
 
         df.to_csv(csv_path, index=False, encoding='utf-8-sig')
         return csv_path

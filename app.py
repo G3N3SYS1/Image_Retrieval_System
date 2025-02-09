@@ -6,12 +6,12 @@ from tkinter import filedialog
 import threading
 import sys
 import os
-from miscellaneous.matcher import CarBottomMatcher
+from miscellaneous.matcher import VehicleModelMatcher
 from miscellaneous.visualization import ImageViewer
 
 MODEL_PATH = "C:\\Users\\MaxwellLee\\PycharmProjects\\Max_UVIRS\\best.pt"
 OUTPUT_DIR = 'output'
-matcher = CarBottomMatcher(MODEL_PATH, OUTPUT_DIR)
+matcher = VehicleModelMatcher(MODEL_PATH, OUTPUT_DIR)
 
 path = getattr(sys, '_MEIPASS', os.getcwd())
 os.chdir(path)
@@ -577,7 +577,7 @@ class VehicleListView:
         header_frame.pack(fill='x', padx=15, pady=10)
 
         header_text = ttk.Label(header_frame,
-                                text=f"{'Select':<20}{'Car model':<30}{'Number of features':<30}{'Storage date':<20}",
+                                text=f"{'Select':<20}{'Vehicle model':<30}{'Number of features':<30}{'Storage date':<20}",
                                 font=('TkDefaultFont', 10, 'bold'))
         header_text.pack(side='left', anchor='w')
 
@@ -596,14 +596,14 @@ class VehicleListView:
                 frame.pack(fill='x', padx=15, pady=5)
 
                 var = tk.BooleanVar(value=False)
-                self.checkbox_vars[v['plate_number']] = var
+                self.checkbox_vars[v['vehicle_model']] = var
 
                 ttk.Checkbutton(frame, variable=var, onvalue=True, offvalue=False).pack(side='left', padx=(10, 30))
 
-                # Create clickable label for plate number
-                plate_label = ttk.Label(frame, text=f"{v['plate_number']}", cursor="hand2")
-                plate_label.pack(side='left', padx=(30, 130))
-                plate_label.bind('<Button-1>', lambda e, plate=v['plate_number']: self.view_images(plate))
+                # Create clickable label for vehicle model
+                model_label = ttk.Label(frame, text=f"{v['vehicle_model']}", cursor="hand2")
+                model_label.pack(side='left', padx=(30, 130))
+                model_label.bind('<Button-1>', lambda e, model=v['vehicle_model']: self.view_images(model))
 
                 ttk.Label(frame, text=f"{v['features_count']}").pack(side='left', padx=(0, 120))
                 ttk.Label(frame, text=f"{v['storage_date']}").pack(side='left')
@@ -613,9 +613,9 @@ class VehicleListView:
             messagebox.showerror(title="Error!", message="There is currently no stored vehicle information.")
 
     def get_selected(self):
-        selected = [plate for plate, var in self.checkbox_vars.items() if var.get()]
+        selected = [model for model, var in self.checkbox_vars.items() if var.get()]
         if selected:
-            messagebox.showinfo("Selected Vehicles", f"Selected plates:\n{', '.join(selected)}")
+            messagebox.showinfo("Selected Vehicles", f"Selected Models:\n{', '.join(selected)}")
         else:
             messagebox.showinfo("Selected Vehicles", "No vehicles selected")
 
@@ -626,7 +626,7 @@ class VehicleListView:
         self.select_all_button.configure(text='Deselect All' if self.select_all_state else 'Select All')
 
     def delete_image(self):
-        selected = [plate for plate, var in self.checkbox_vars.items() if var.get()]
+        selected = [model for model, var in self.checkbox_vars.items() if var.get()]
         if not selected:
             messagebox.showerror(title="Error!", message="No vehicles selected.")
             return
@@ -636,7 +636,7 @@ class VehicleListView:
     def compare_image(self):
         try:
             image_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png")])
-            matches = matcher.find_matching_plate(image_path)
+            matches = matcher.find_matching_model(image_path)
             if not matches:
                 messagebox.showerror(
                     title="Error!", message="No matching result found.")
@@ -649,29 +649,29 @@ class VehicleListView:
             )
             return
 
-    def view_images(self, plate_number):
-        # Check if window already open for this plate
-        if plate_number in self.image_windows:
-            self.image_windows[plate_number].root.lift()  # Bring existing window to front
+    def view_images(self, vehicle_model):
+        # Check if window already open for this model
+        if vehicle_model in self.image_windows:
+            self.image_windows[vehicle_model].root.lift()  # Bring existing window to front
             return
 
-        image_folder = os.path.join(OUTPUT_DIR, "images", plate_number)
+        image_folder = os.path.join(OUTPUT_DIR, "images", vehicle_model)
         if not os.path.exists(image_folder):
-            messagebox.showerror("Error", f"No images found for plate {plate_number}")
+            messagebox.showerror("Error", f"No images found for model {vehicle_model}")
             return
 
         # Create new window for image viewer
         viewer_window = tk.Toplevel(self.root)
         viewer_window.protocol("WM_DELETE_WINDOW",
-                               lambda p=plate_number: self.close_image_window(p))
+                               lambda p=vehicle_model: self.close_image_window(p))
 
         image_viewer = ImageViewer(viewer_window, image_folder)
-        self.image_windows[plate_number] = image_viewer
+        self.image_windows[vehicle_model] = image_viewer
 
-    def close_image_window(self, plate_number):
-        if plate_number in self.image_windows:
-            self.image_windows[plate_number].root.destroy()
-            del self.image_windows[plate_number]
+    def close_image_window(self, vehicle_model):
+        if vehicle_model in self.image_windows:
+            self.image_windows[vehicle_model].root.destroy()
+            del self.image_windows[vehicle_model]
 
     def start_search(self, event=None):
         if not self.search_active:
@@ -736,7 +736,7 @@ class VehicleListView:
             self.canvas.update_idletasks()
 
         elif not found and event and event.keysym == 'Return':
-            messagebox.showinfo("Search Result", "No matching license plate found.")
+            messagebox.showinfo("Search Result", "No matching vehicle model found.")
 
     def clear_highlights(self):
         for label in self.highlighted_labels:

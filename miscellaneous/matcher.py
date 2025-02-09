@@ -18,7 +18,7 @@ from .visualization import VisualizationHandler
 import traceback
 
 
-class CarBottomMatcher:
+class VehicleModelMatcher:
     def __init__(self, model_path='best.pt', save_dir='output'):
         if not os.path.exists(model_path):
             raise ValueError(f"Model file not exists: {model_path}")
@@ -42,13 +42,13 @@ class CarBottomMatcher:
 
             # Convert old format to new format if necessary
             converted_cache = {}
-            for plate_number, data in cache_data.items():
+            for vehicle_model, data in cache_data.items():
                 if isinstance(data, dict) and 'features' in data and 'images' in data:
                     # Already in new format
-                    converted_cache[plate_number] = data
+                    converted_cache[vehicle_model] = data
                 else:
                     # Convert old format (single feature) to new format (list of features)
-                    converted_cache[plate_number] = {
+                    converted_cache[vehicle_model] = {
                         'features': [data] if data is not None else [],  # Convert single feature to list
                         'images': []  # Initialize empty images list for old entries
                     }
@@ -169,14 +169,14 @@ class CarBottomMatcher:
         final_score = total_score / len(grouped1)
         return final_score
 
-    def find_matching_plate(self, image_path: str, top_k: int = 5) -> List[Tuple[str, float]]:
+    def find_matching_model(self, image_path: str, top_k: int = 5) -> List[Tuple[str, float]]:
         """
-        Find the license plate number that best matches the input image
+        Find the vehicle model that best matches the input image
         Args:
             image_path: Enter image path
             top_k: The best number of matches returned
         Returns:
-            List of (plate_number, similarity_score) tuples
+            List of (vehicle_model, similarity_score) tuples
         """
         # Detect input images
         img = cv2.imread(image_path)
@@ -186,13 +186,13 @@ class CarBottomMatcher:
         results = self.model(img)
         input_features = self.extract_features(results)
 
-        # Calculate similarity to all known license plates
+        # Calculate similarity to all known vehicle models
         similarities = []
-        for plate_number, images in self.feature_cache.items():
+        for vehicle_model, images in self.feature_cache.items():
             for img_path, data in images.items():
                 stored_features = data['features']
                 similarity = self.calculate_similarity(input_features, stored_features)
-                similarities.append((plate_number, similarity))
+                similarities.append((vehicle_model, similarity))
         # Sort by similarity
         similarities.sort(key=lambda x: x[1], reverse=True)
 
@@ -207,13 +207,13 @@ class CarBottomMatcher:
 
         return similarities[:top_k]
 
-    def process_image(self, image_path: str, plate_number: str) -> dict:
-        """Process and save images with license plate numbers"""
+    def process_image(self, image_path: str, vehicle_model: str) -> dict:
+        """Process and save images with vehicle models"""
         self.processed_count += 1
-        plate_number = plate_number.split(".")[0]
+        vehicle_model = vehicle_model.split(".")[0]
         result = {
             'success': False,
-            'car_model': plate_number,
+            'vehicle_model': vehicle_model,
             'message': '',
             'save_path': None
         }
@@ -233,17 +233,17 @@ class CarBottomMatcher:
                 result['message'] = "No features detected in image"
                 return result
 
-            # Initialize plate entry if it doesn't exist
-            if plate_number not in self.feature_cache:
-                self.feature_cache[plate_number] = {}
+            # Initialize model entry if it doesn't exist
+            if vehicle_model not in self.feature_cache:
+                self.feature_cache[vehicle_model] = {}
 
             # Save the annotated image
             plotted_img = results[0].plot()
-            save_path = self.create_storage_path(plate_number, len(self.feature_cache[plate_number]), change=True)
+            save_path = self.create_storage_path(vehicle_model, len(self.feature_cache[vehicle_model]), change=True)
             cv2.imwrite(save_path, plotted_img)
 
             # Store features under the specific save path
-            self.feature_cache[plate_number][save_path] = {
+            self.feature_cache[vehicle_model][save_path] = {
                 'features': features
             }
 
@@ -261,74 +261,74 @@ class CarBottomMatcher:
 
         return result, self.processed_count
 
-    def create_storage_path(self, plate_number: str, index: int, change: False) -> str:
+    def create_storage_path(self, vehicle_model: str, index: int, change: False) -> str:
         """Create storage path with index for multiple images"""
         if change:
-            base_dir = os.path.join(self.save_dir, 'images', plate_number)
+            base_dir = os.path.join(self.save_dir, 'images', vehicle_model)
         else:
-            base_dir = os.path.join(self.save_dir, plate_number)
+            base_dir = os.path.join(self.save_dir, vehicle_model)
         os.makedirs(base_dir, exist_ok=True)
-        return os.path.join(base_dir, f"{plate_number}_{index}.jpg")
+        return os.path.join(base_dir, f"{vehicle_model}_{index}.jpg")
 
-    def normalize_plate_number(self, plate: str) -> str:
-        """Standardized license plate number"""
+    def normalize_vehicle_model(self, model: str) -> str:
+        """Standardized vehicle model"""
         invalid_chars = '<>:"/\\|?*'
         for char in invalid_chars:
-            plate = plate.replace(char, '_')
-        return plate
+            model = model.replace(char, '_')
+        return model
 
-    def delete_vehicle(self, plate_number: str) -> bool:
+    def delete_vehicle(self, vehicle_model: str) -> bool:
         """Delete stored vehicle information"""
-        if plate_number not in self.feature_cache:
-            print(f"No vehicle information found with license plate number {plate_number}")
+        if vehicle_model not in self.feature_cache:
+            print(f"No vehicle information found with vehicle model {vehicle_model}")
             return False
 
         try:
             # Delete feature cache
-            del self.feature_cache[plate_number]
+            del self.feature_cache[vehicle_model]
             self.save_feature_cache()
 
             # Delete stored pictures
-            img_path = self._find_vehicle_image(plate_number)
+            img_path = self._find_vehicle_image(vehicle_model)
             if img_path and os.path.exists(img_path):
                 os.remove(img_path)
                 print(f"Picture deleted：{img_path}")
 
-            print(f"Successfully deleted vehicle information with license plate number {plate_number}")
+            print(f"Successfully deleted vehicle information with vehicle model {vehicle_model}")
             return True
 
         except Exception as e:
             print(f"An error occurred while deleting vehicle information: {str(e)}")
             return False
 
-    def batch_delete_vehicles(self, plate_numbers: List[str]) -> Dict[str, bool]:
+    def batch_delete_vehicles(self, vehicle_models: List[str]) -> Dict[str, bool]:
         """Delete vehicle information in batches
 
         Args:
-            plate_numbers: List of license plate numbers to be deleted
+            vehicle_models: List of vehicle models to be deleted
         Returns:
-            Dict[str, bool]: Deletion results for each license plate number
+            Dict[str, bool]: Deletion results for each vehicle model
         """
         results = {}
-        for plate in plate_numbers:
-            results[plate] = self.delete_vehicle(plate)
+        for model in vehicle_models:
+            results[model] = self.delete_vehicle(model)
         return results
 
-    def modify_vehicle(self, old_plate_number: str, new_plate_number: str, new_image_path: str = None) -> bool:
+    def modify_vehicle(self, old_vehicle_model: str, new_vehicle_model: str, new_image_path: str = None) -> bool:
         """Modify vehicle information"""
         print("\nDEBUG INFORMATION:")
         print(f"1. Attempting to modify vehicle:")
-        print(f"   - Old plate: {old_plate_number}")
-        print(f"   - New plate: {new_plate_number}")
+        print(f"   - Old model: {old_vehicle_model}")
+        print(f"   - New model: {new_vehicle_model}")
         print(f"   - New image path: {new_image_path}")
 
         # Debug feature cache content
         print("\n2. Feature cache status:")
-        print(f"   - Available plates: {list(self.feature_cache.keys())}")
-        print(f"   - Is old plate in cache?: {old_plate_number in self.feature_cache}")
+        print(f"   - Available models: {list(self.feature_cache.keys())}")
+        print(f"   - Is old model in cache?: {old_vehicle_model in self.feature_cache}")
 
-        if old_plate_number not in self.feature_cache:
-            print(f"Error: No vehicle information found with license plate number {old_plate_number}")
+        if old_vehicle_model not in self.feature_cache:
+            print(f"Error: No vehicle information found with vehicle model {old_vehicle_model}")
             return False
 
         try:
@@ -349,32 +349,32 @@ class CarBottomMatcher:
 
                 # save new images
                 plotted_img = results[0].plot()
-                new_save_path = self.create_storage_path(new_plate_number)
+                new_save_path = self.create_storage_path(new_vehicle_model)
                 cv2.imwrite(new_save_path, plotted_img)
                 print(f"   - New image saved to: {new_save_path}")
 
                 # delete old images
-                old_img_path = self._find_vehicle_image(old_plate_number)
+                old_img_path = self._find_vehicle_image(old_vehicle_model)
                 if old_img_path and os.path.exists(old_img_path):
                     os.remove(old_img_path)
                     print(f"   - Old image removed: {old_img_path}")
             else:
                 print("   - No new image provided")
                 print("   - Using existing features")
-                new_features = self.feature_cache[old_plate_number]
+                new_features = self.feature_cache[old_vehicle_model]
                 # Rename old pictures
-                old_img_path = self._find_vehicle_image(old_plate_number)
+                old_img_path = self._find_vehicle_image(old_vehicle_model)
                 if old_img_path and os.path.exists(old_img_path):
-                    new_save_path = self.create_storage_path(new_plate_number)
+                    new_save_path = self.create_storage_path(new_vehicle_model)
                     shutil.move(old_img_path, new_save_path)
                     print(f"   - Image renamed from {old_img_path} to {new_save_path}")
 
             print("\n4. Updating feature cache:")
-            if old_plate_number != new_plate_number:
-                print(f"   - Removing old plate entry: {old_plate_number}")
-                del self.feature_cache[old_plate_number]
-            print(f"   - Adding new plate entry: {new_plate_number}")
-            self.feature_cache[new_plate_number] = new_features
+            if old_vehicle_model != new_vehicle_model:
+                print(f"   - Removing old model entry: {old_vehicle_model}")
+                del self.feature_cache[old_vehicle_model]
+            print(f"   - Adding new model entry: {new_vehicle_model}")
+            self.feature_cache[new_vehicle_model] = new_features
             print("   - Saving feature cache")
             self.save_feature_cache()
 
@@ -392,25 +392,25 @@ class CarBottomMatcher:
     def list_stored_vehicles(self) -> List[dict]:
         """Get information about all stored vehicles"""
         vehicles = []
-        for plate_number, images in self.feature_cache.items():
+        for vehicle_model, images in self.feature_cache.items():
             for img_path, data in images.items():
                 features = data['features']  # Extract features for the specific image
                 # Find the corresponding image file
-                # img_path = self._find_vehicle_image(plate_number)
+                # img_path = self._find_vehicle_image(vehicle_model)
                 vehicles.append({
-                    'plate_number': plate_number,
+                    'vehicle_model': vehicle_model,
                     'features_count': len(features),
                     'image_path': img_path,
                     'storage_date': self._get_file_date(img_path) if img_path else 'Unknown'
                 })
         return vehicles
 
-    def _find_vehicle_image(self, plate_number: str) -> str:
+    def _find_vehicle_image(self, vehicle_model: str) -> str:
         """Find the storage path of vehicle pictures"""
         for root, _, files in os.walk(self.save_dir):
-            normalized_plate = self.normalize_plate_number(plate_number)
+            normalized_model = self.normalize_vehicle_model(vehicle_model)
             for file in files:
-                if file.startswith(normalized_plate) and file.lower().endswith(('.jpg', '.png')):
+                if file.startswith(normalized_model) and file.lower().endswith(('.jpg', '.png')):
                     return os.path.join(root, file)
         return None
 
@@ -436,14 +436,14 @@ class CarBottomMatcher:
 
             # Process each image
             for img_file in image_files:
-                # Extract plate number from filename
-                plate_number = img_file.split('_')[0]
+                # Extract vehicle model from filename
+                vehicle_model = img_file.split('_')[0]
                 image_path = os.path.join(folder_path, img_file)
                 self.file_count = self.file_count + 1
 
                 # Process the image and store results
-                result = self.process_image(image_path, plate_number)
-                results[plate_number] = result
+                result = self.process_image(image_path, vehicle_model)
+                results[vehicle_model] = result
 
         except Exception as e:
             results['error'] = {
